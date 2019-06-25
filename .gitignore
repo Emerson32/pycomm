@@ -8,3 +8,4 @@ README.rst
 # python generated files
 venv/
 pycomm/__pycache__/
+pycomm/commands/__pycache__/

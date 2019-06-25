@@ -7,7 +7,6 @@ setup(
     install_requires=[
         'Click',
         'prompt_toolkit',
-        'PyInquirer',
         'pyfiglet',
     ],
     entry_points={

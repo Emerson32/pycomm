@@ -4,9 +4,11 @@
 
 import socket
 import select
+import sys
 
-IP = '127.0.0.1'
-PORT = 1234
+# Read arguments from initial command line call
+IP = sys.argv[3]
+PORT = int(sys.argv[4])
 
 ENCODING = 'utf-8'
 HEADER_LENGTH = 10
@@ -31,18 +33,18 @@ def receive_message(client_socket):
 
     try:
         # Receive the message header
-        messaage_header = client_socket.recv(HEADER_LENGTH)
+        message_header = client_socket.recv(HEADER_LENGTH)
 
         # If no data was received then the client gracefully exited
-        if not len(messaage_header):
+        if not len(message_header):
             return False
 
         # Calculate the message length
-        messaage_length = int(messaage_header.decode(ENCODING).strip())
+        message_length = int(message_header.decode(ENCODING).strip())
 
         # Return a dictionary containing the message header and message data
-        return {'header': messaage_header,
-                'data': client_socket.recv(messaage_length)}
+        return {'header': message_header,
+                'data': client_socket.recv(message_length)}
 
     except:
         # Client closed the connection in an unnatural manner
@@ -62,7 +64,6 @@ def broadcast(user, msg, conn):
 
 
 while True:
-
     read_sockets, _, exception_sockets = select.select(sockets_list, [],
                                                        sockets_list)
 
