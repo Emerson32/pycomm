@@ -7,5 +7,4 @@ README.rst
 
 # python generated files
 venv/
-noteplus/__pycache__/
-noteplus/commands/__pycache__
+pycomm/__pycache__/
