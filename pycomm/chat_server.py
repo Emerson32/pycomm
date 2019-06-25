@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# chat_server.py - service to be run on server host
+
 import socket
 import select
 
