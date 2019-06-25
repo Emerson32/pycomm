@@ -1,0 +1,11 @@
+# general
+.idea/
+*.egg-info
+*.db
+MANIFEST.in
+README.rst
+
+# python generated files
+venv/
+noteplus/__pycache__/
+noteplus/commands/__pycache__
