@@ -31,7 +31,9 @@ def chat(init, host, port):
     else:
 
         username = prompt(username_prompt, style=username_style)
+
         client = ChatClient(host, port, username)
+
         client.connect()
 
 

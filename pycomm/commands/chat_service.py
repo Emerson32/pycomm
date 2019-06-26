@@ -1,7 +1,6 @@
 # chat_service.py - Object representing a chat server
 import socket
 import select
-import threading
 
 
 class ChatService:
@@ -20,8 +19,11 @@ class ChatService:
         self.server_socket = None
         self.sockets_list = []
 
-    def error_thread(self, message):
-        return message
+    def send_error(self, client_socket, message):
+        # Return an error message to the client
+        message_header = f"{len(message): <{self.HEADER_LENGTH}}".encode(self.ENCODING)
+        message = message.encode(self.ENCODING)
+        client_socket.send(message_header + message)
 
     def _broadcast(self, user, msg, conn):
         """Broadcasts messages to clients connected to the service"""
@@ -73,16 +75,6 @@ class ChatService:
 
             for notified_socket in read_sockets:
 
-                # Check to see if user already exists
-                # if
-                #     # Create a thread to tell the client
-                #     # the given username is already taken
-                #     message = 'Username already taken'
-                #     thread = threading.Thread(target=self.error_thread,
-                #                               args=(message,))
-                #     thread.start()
-                #     continue
-
                 # If the notified socket is a server socket,
                 # then a new connection has been established
                 if notified_socket == self.server_socket:
@@ -94,6 +86,11 @@ class ChatService:
                     # Client disconnected before entering a username
                     if user is False:
                         continue
+
+                    if user['data'].decode(self.ENCODING) in self.clients.values():
+                        message = 'User already exists'
+                        self.send_error(client_socket, message)
+
 
                     # Add accepted socket to the sockets list
                     self.sockets_list.append(client_socket)
