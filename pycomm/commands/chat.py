@@ -34,8 +34,10 @@ def chat(init, host, port):
 
         client = ChatClient(host, port, username)
 
-        client.connect()
-
+        try:
+            client.connect()
+        except ConnectionRefusedError:
+            raise click.UsageError("Server not established")
 
 
 

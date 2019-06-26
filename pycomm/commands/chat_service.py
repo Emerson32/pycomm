@@ -123,7 +123,7 @@ class ChatService:
                     user = self.clients[notified_socket]
 
                     print(f"Received message from {user['data'].decode(self.ENCODING)}:"
-                          + "{message['data'].decode(ENCODING)}")
+                          + f"{message['data'].decode(self.ENCODING)}")
 
                     # Broadcast the message
                     self._broadcast(user, message, notified_socket)
