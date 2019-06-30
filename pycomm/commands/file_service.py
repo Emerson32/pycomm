@@ -55,7 +55,7 @@ class FileService:
 
     def _receive_file(self, sock, filename):
         """Used for receiving a file from a client"""
-        print("Receiving file...")
+        print("[+] Receiving file...")
 
         try:
             # Retrieve the file size
@@ -63,7 +63,7 @@ class FileService:
 
             # Header not received
             if not file_header:
-                print("Could not retrieve header")
+                print("[!] Could not retrieve header")
                 sys.exit()
 
             # Receive the file data

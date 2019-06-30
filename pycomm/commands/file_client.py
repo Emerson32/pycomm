@@ -20,7 +20,7 @@ class FileClient:
 
     def _receive_file(self):
         """Used for receiving files from a service"""
-        print("Receiving file...")
+        print("[+] Receiving file...")
 
         try:
             # Retrieve the file size
@@ -28,16 +28,17 @@ class FileClient:
 
             # Header not received
             if not file_header:
-                print("Could not retrieve header")
+                print("[!] Could not retrieve header")
                 sys.exit()
 
             # Receive the file data
             file_size = int(file_header.decode(self.ENCODING).strip())
             data = self.client_socket.recv(file_size)
 
-            # Begin writing file to local storage
             with open(self.file_name, 'wb') as f_obj:
                 f_obj.write(data)
+
+            print("[+] Done")
 
         except Exception as e:
             print(e)
@@ -79,11 +80,11 @@ class FileClient:
             status = status.decode(self.ENCODING)
 
             if status == 'File Exists':
-                print("File Found\n")
+                print("[+] File Found")
                 return True
 
             else:
-                print("File Not Found!")
+                print("[!] File Not Found!")
                 return False
         except:
             return None
@@ -101,7 +102,6 @@ class FileClient:
                 if self.retrieve_status():
                     # Receive the file and write it
                     self._receive_file()
-                    print("File Received")
 
                 # Client failed to receive status
                 else:
@@ -121,11 +121,11 @@ class FileClient:
 
         except IOError as e:
             if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
-                print('Reading error: {}'.format(str(e)))
+                print("[!] Reading error: {}".format(str(e)))
                 sys.exit()
 
         except Exception as e:
             # Any other exception - something happened, exit
-            print('Reading error: '.format(str(e)))
+            print("[!] Reading error: ".format(str(e)))
             sys.exit()
 
