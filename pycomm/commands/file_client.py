@@ -1,5 +1,5 @@
-import click
 import errno
+import os
 import socket
 import sys
 
@@ -35,7 +35,7 @@ class FileClient:
             file_size = int(file_header.decode(self.ENCODING).strip())
             data = self.client_socket.recv(file_size)
 
-            # Begin writing
+            # Begin writing file to local storage
             with open(self.file_name, 'wb') as f_obj:
                 f_obj.write(data)
 
@@ -43,9 +43,15 @@ class FileClient:
             print(e)
             sys.exit()
 
+    def _send_file(self, size, file):
+        """Used for sending files to a server"""
+        # Create the file header
+        file_header = f"{size:<{self.HEADER_LENGTH}}".encode(self.ENCODING)
 
+        # Send the data
+        self.client_socket.send(file_header + file)
 
-    def send_file_info(self):
+    def file_query(self):
         # First send the op flag so that the server will know what to do
         op_flag = self.file_op.encode(self.ENCODING)
         op_header = f"{len(op_flag): <{self.HEADER_LENGTH}}".encode(self.ENCODING)
@@ -88,19 +94,30 @@ class FileClient:
         self.client_socket.setblocking(True)
 
         try:
+            # Send the filename and operation flag
+            self.file_query()
+
             if self.file_op == 'receive':
-                self.send_file_info()
                 if self.retrieve_status():
                     # Receive the file and write it
                     self._receive_file()
-                    print("Done")
+                    print("File Received")
 
+                # Client failed to receive status
                 else:
                     sys.exit()
 
             elif self.file_op == 'send':
-                # File existence already checked in this case
-                pass
+
+                file_path = os.path.join(self.storage_path, self.file_name)
+
+                # Open file for reading
+                with open(self.file_name, 'rb') as f_obj:
+                    file_size = os.path.getsize(file_path)
+                    data = f_obj.read(file_size)
+
+                # Send the file off to the server
+                self._send_file(file_size, data)
 
         except IOError as e:
             if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:

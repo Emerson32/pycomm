@@ -24,15 +24,59 @@ class FileService:
         if not os.path.exists(self.storage_path):
             os.mkdir(self.storage_path)
 
-    def _send_file(self, sock, size, file):
+    def _send_file(self, sock, file):
         """Used for sending files to a client"""
+
+        file_path = os.path.join(self.storage_path, file)
+
+        # If the file does not exist inform the client and continue listening
+        if not os.path.isfile(os.path.join(file_path)):
+            message = 'File Not Found'
+            self._send_message(sock, message)
+            return
+
+        else:
+            # The file exists so send a status report to the client
+            message = 'File Exists'
+            self._send_message(sock, message)
+
+        # Read the file before sending to the client
+        with open(file, 'rb') as f_obj:
+            file_size = os.path.getsize(file_path)
+            file_data = f_obj.read(file_size)
         print('Sending file to client...')
 
         # First create the file header
-        file_header = f"{size:<{self.HEADER_LENGTH}}".encode(self.ENCODING)
+        file_header = f"{file_size:<{self.HEADER_LENGTH}}".encode(self.ENCODING)
 
         # Send the data
-        sock.send(file_header + file)
+        sock.send(file_header + file_data)
+        print("File Sent")
+
+    def _receive_file(self, sock, filename):
+        """Used for receiving a file from a client"""
+        print("Receiving file...")
+
+        try:
+            # Retrieve the file size
+            file_header = sock.recv(self.HEADER_LENGTH)
+
+            # Header not received
+            if not file_header:
+                print("Could not retrieve header")
+                sys.exit()
+
+            # Receive the file data
+            file_size = int(file_header.decode(self.ENCODING).strip())
+            data = sock.recv(file_size)
+
+            # Begin writing file to local storage
+            with open(filename, 'wb') as f_obj:
+                f_obj.write(data)
+
+        except Exception as e:
+            print(e)
+            sys.exit()
 
     def _send_message(self, sock, message):
         """Used for sending general messages such as errors"""
@@ -121,7 +165,7 @@ class FileService:
                         continue
 
                     # Store the title name of the file
-                    file = file['data'].decode(self.ENCODING)
+                    file_name = file['data'].decode(self.ENCODING)
 
                     # Get the operation to perform
                     current_operation = self.ops[notified_socket]
@@ -130,24 +174,13 @@ class FileService:
                     # Client is requesting a file
                     if current_operation == 'receive':
 
-                        file_path = os.path.join(self.storage_path, file)
+                        # Includes necessary file checks
+                        self._send_file(notified_socket, file_name)
 
-                        # If the file does not exist inform the client and continue listening
-                        if not os.path.isfile(os.path.join(file_path)):
-                            message = 'File Not Found'
-                            self._send_message(notified_socket, message)
-                            # print("Thread started")
-                            continue
+                    # Client is sending a file
+                    if current_operation == 'send':
+                        self._receive_file(notified_socket, file_name)
 
-                        else:
-                            # The file exists so send a status report to the client
-                            message = 'File Exists'
-                            self._send_message(notified_socket, message)
 
-                        # Read the file before sending to the client
-                        with open(file, 'rb') as f_obj:
-                            file_size = os.path.getsize(file_path)
-                            data = f_obj.read(file_size)
 
-                        self._send_file(notified_socket, file_size, data)
 

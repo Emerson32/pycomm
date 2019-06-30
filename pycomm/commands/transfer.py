@@ -21,6 +21,10 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.argument('host', type=str, required=True)
 @click.argument('port', type=int, required=True)
 def transfer(send, receive, file, path, host, port):
+    # Check the existence of the provided storage path
+    if not os.path.exists(path):
+        raise click.UsageError("No such path")
+
     if send:
         file_path = os.path.join(path, file)
 
