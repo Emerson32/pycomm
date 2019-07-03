@@ -62,6 +62,7 @@ class ChatService:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
+        self.server_socket.setblocking(False)
         self.server_socket.listen(10)
 
         self.sockets_list = [self.server_socket]

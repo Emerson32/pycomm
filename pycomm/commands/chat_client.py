@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import socket
-import select
 import sys
 import errno
 
@@ -19,29 +18,28 @@ class ChatClient:
         self.host = conn_ip
         self.port = port
         self.user = username
-
         self.client_socket = None
 
-    def _receive_message(self, client_socket):
-        """Handles the reception of messages"""
-        try:
-            # Receive the message header
-            message_header = client_socket.recv(self.HEADER_LENGTH)
-
-            # If no data was received then the client gracefully exited
-            if not len(message_header):
-                return False
-
-            # Calculate the message length
-            message_length = int(message_header.decode(self.ENCODING).strip())
-
-            # Return a dictionary containing the message header and message data
-            return {'header': message_header,
-                    'data': client_socket.recv(message_length)}
-
-        except:
-            # Client closed the connection in an unnatural manner
-            return
+    # def _receive_message(self, client_socket):
+    #     """Handles the reception of messages"""
+    #     try:
+    #         # Receive the message header
+    #         message_header = client_socket.recv(self.HEADER_LENGTH)
+    #
+    #         # If no data was received then the client gracefully exited
+    #         if not len(message_header):
+    #             return False
+    #
+    #         # Calculate the message length
+    #         message_length = int(message_header.decode(self.ENCODING).strip())
+    #
+    #         # Return a dictionary containing the message header and message data
+    #         return {'header': message_header,
+    #                 'data': client_socket.recv(message_length)}
+    #
+    #     except:
+    #         # Client closed the connection in an unnatural manner
+    #         return
 
     def connect(self):
         # Configure client socket
@@ -56,20 +54,14 @@ class ChatClient:
 
         # Start main client loop
         while True:
-
-            # read_sockets, _, _ = select.select([self.client_socket], [], [])
-            #
-            # for notified_socket in read_sockets:
-            #     if notified_socket is self.client_socket:
-            #         received_message = self._receive_message(notified_socket)
-            #         print(received_message)
-
             message = prompt(self.user + '> ', style=message_style)
 
             if message:
                 # Prepare the message with a header
                 message = message.encode(self.ENCODING)
                 message_header = f"{len(message): <{self.HEADER_LENGTH}}".encode(self.ENCODING)
+
+                # Send the message to the server
                 self.client_socket.send(message_header + message)
 
             try:
@@ -78,17 +70,15 @@ class ChatClient:
                 while True:
 
                     # Receive the header of the username
-                    username_header  = self.client_socket.recv(self.HEADER_LENGTH)
+                    username_header = self.client_socket.recv(self.HEADER_LENGTH)
 
                     # If no data is received the the server closed the connection gracefully
                     if not username_header:
                         print('Connection closed by the server')
                         sys.exit()
 
-                    # Parse the user header
-                    username_length = int(username_header.decode(self.ENCODING).strip())
-
                     # Receive and decode the username
+                    username_length = int(username_header.decode(self.ENCODING).strip())
                     username = self.client_socket.recv(username_length).decode(self.ENCODING)
 
                     # Now do the same for the message

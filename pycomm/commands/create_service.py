@@ -8,7 +8,7 @@ from pycomm.commands.file_service import FileService
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-@click.command('create_service', context_settings=CONTEXT_SETTINGS,
+@click.command('create', context_settings=CONTEXT_SETTINGS,
                short_help='Initiate a service')
 @click.option('-c', '--chat', 'chat',
               is_flag=True, help='Initiate a chat service on the local machine')

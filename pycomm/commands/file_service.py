@@ -24,6 +24,16 @@ class FileService:
         if not os.path.exists(self.storage_path):
             os.mkdir(self.storage_path)
 
+    def _enumerate_list(self):
+        """Creates a list of all the storage files on the server"""
+        file_list = []
+
+        for _, _, filenames in os.walk(self.storage_path, topdown=True):
+            for name in filenames:
+                file_list.append(name)
+
+        return file_list
+
     def _send_file(self, sock, file):
         """Used for sending files to a client"""
 
@@ -174,12 +184,25 @@ class FileService:
                     # Client is requesting a file
                     if current_operation == 'receive':
 
+                        # files = self._enumerate_files()
+
                         # Includes necessary file checks
                         self._send_file(notified_socket, file_name)
 
                     # Client is sending a file
-                    if current_operation == 'send':
+                    elif current_operation == 'send':
                         self._receive_file(notified_socket, file_name)
+
+                    # Client is requesting a list of files stored on the server
+                    elif current_operation == 'list':
+                        files = self._enumerate_list()
+
+                        # Form the message to be sent to the client
+                        files_message = 'Files Stored:\n-------------\n'
+                        for file in files:
+                            files_message += file + '\n'
+
+                        self._send_message(notified_socket, files_message)
 
 
 

@@ -9,10 +9,12 @@ class FileClient:
     def __init__(self, host, port, file, path, file_op):
         self.host = host
         self.port = port
-        self.file_name = file
-        self.storage_path = path
+
         self.file_op = file_op
-        
+        self.file_name = file
+
+        self.storage_path = path
+
         self.HEADER_LENGTH = 10
         self.ENCODING = 'utf-8'
         
@@ -35,6 +37,8 @@ class FileClient:
             file_size = int(file_header.decode(self.ENCODING).strip())
             data = self.client_socket.recv(file_size)
 
+            # Change to the desired directory and write the data
+            os.chdir(self.storage_path)
             with open(self.file_name, 'wb') as f_obj:
                 f_obj.write(data)
 
@@ -89,6 +93,22 @@ class FileClient:
         except:
             return None
 
+    def _receive_message(self):
+        try:
+            message_header = self.client_socket.recv(self.HEADER_LENGTH)
+
+            if not message_header:
+                return None
+
+            message_length = int(message_header.decode(self.ENCODING).strip())
+            message = self.client_socket.recv(message_length)
+            message = message.decode(self.ENCODING)
+
+            return message
+
+        except:
+            return None
+
     def connect(self):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect((self.host, self.port))
@@ -118,6 +138,13 @@ class FileClient:
 
                 # Send the file off to the server
                 self._send_file(file_size, data)
+
+            elif self.file_op == 'list':
+                files = self._receive_message()
+                if not files:
+                    print("[!] Could not find any files")
+                else:
+                    print(files)
 
         except IOError as e:
             if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
