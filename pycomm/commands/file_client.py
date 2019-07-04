@@ -118,6 +118,7 @@ class FileClient:
             # Send the filename and operation flag
             self.file_query()
 
+            # Receive a file from a server
             if self.file_op == 'receive':
                 if self.retrieve_status():
                     # Receive the file and write it
@@ -127,6 +128,7 @@ class FileClient:
                 else:
                     sys.exit()
 
+            # Send a file to a server
             elif self.file_op == 'send':
 
                 file_path = os.path.join(self.storage_path, self.file_name)
@@ -139,6 +141,7 @@ class FileClient:
                 # Send the file off to the server
                 self._send_file(file_size, data)
 
+            # Retrieve a list of files stored on the server
             elif self.file_op == 'list':
                 files = self._receive_message()
                 if not files:

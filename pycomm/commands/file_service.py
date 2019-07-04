@@ -66,6 +66,7 @@ class FileService:
     def _receive_file(self, sock, filename):
         """Used for receiving a file from a client"""
         print("[+] Receiving file...")
+        status = ''
 
         try:
             # Retrieve the file size
@@ -84,8 +85,10 @@ class FileService:
             with open(filename, 'wb') as f_obj:
                 f_obj.write(data)
 
-        except Exception as e:
-            print(e)
+            print("[+] Done")
+
+        except Exception:
+            print("[-] Could not receive file!")
             sys.exit()
 
     def _send_message(self, sock, message):
@@ -115,6 +118,15 @@ class FileService:
         except:
             # Client closed the connection in an unnatural manner
             return None
+
+    def _remove_connection(self, addr, sock):
+        print('[-]Closed connection from {}:{}'.format(*addr))
+
+        # Remove from socket list
+        self.sockets_list.remove(sock)
+
+        # Also remove from operations dictionary
+        del self.ops[sock]
 
     def start(self):
         """Enable the service"""
@@ -155,36 +167,29 @@ class FileService:
                     print("Operation: " + str(op_flag['data'].decode(self.ENCODING)))
 
                 else:
-
-                    # Receive the filename header and filename data
-                    file = self._receive_message(notified_socket)
-
-                    if file:
-                        print("File name: " + str(file['data'].decode(self.ENCODING)))
-
-                    # Client disconnected
-                    if not file:
-                        print('[-]Closed connection from {}:{}'.format(*client_addr))
-
-                        # Remove from socket list
-                        self.sockets_list.remove(notified_socket)
-
-                        # Also remove from operations dictionary
-                        del self.ops[notified_socket]
-
-                        continue
-
-                    # Store the title name of the file
-                    file_name = file['data'].decode(self.ENCODING)
-
                     # Get the operation to perform
                     current_operation = self.ops[notified_socket]
                     current_operation = current_operation['data'].decode(self.ENCODING)
 
+                    if current_operation != 'list':
+
+                        # Receive the filename header and filename data
+                        file = self._receive_message(notified_socket)
+
+                        if file:
+                            print("File name: " + str(file['data'].decode(self.ENCODING)))
+
+                        # Client disconnected
+                        if not file:
+                            self._remove_connection(client_addr, notified_socket)
+
+                            continue
+
+                        # Store the title name of the file
+                        file_name = file['data'].decode(self.ENCODING)
+
                     # Client is requesting a file
                     if current_operation == 'receive':
-
-                        # files = self._enumerate_files()
 
                         # Includes necessary file checks
                         self._send_file(notified_socket, file_name)
@@ -192,6 +197,7 @@ class FileService:
                     # Client is sending a file
                     elif current_operation == 'send':
                         self._receive_file(notified_socket, file_name)
+
 
                     # Client is requesting a list of files stored on the server
                     elif current_operation == 'list':
@@ -203,6 +209,9 @@ class FileService:
                             files_message += file + '\n'
 
                         self._send_message(notified_socket, files_message)
+                        self._remove_connection(client_addr, notified_socket)
+
+                        continue
 
 
 

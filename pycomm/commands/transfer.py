@@ -27,7 +27,7 @@ def transfer(send, receive, list_files, path, host, port):
         raise click.UsageError("No such path")
 
     if send:
-        file_path = os.path.join(path, send[0])
+        file_path = os.path.join(path, send)
 
         if not os.path.isfile(file_path):
             raise click.UsageError("No such file")
