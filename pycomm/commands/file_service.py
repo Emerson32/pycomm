@@ -171,7 +171,21 @@ class FileService:
                     current_operation = self.ops[notified_socket]
                     current_operation = current_operation['data'].decode(self.ENCODING)
 
-                    if current_operation != 'list':
+                    # Client is requesting a list of files stored on the server
+                    if current_operation == 'list':
+                        files = self._enumerate_list()
+
+                        # Form the message to be sent to the client
+                        files_message = 'Files Stored:\n-------------\n'
+                        for file in files:
+                            files_message += file + '\n'
+
+                        self._send_message(notified_socket, files_message)
+                        self._remove_connection(client_addr, notified_socket)
+
+                        continue
+
+                    else:
 
                         # Receive the filename header and filename data
                         file = self._receive_message(notified_socket)
@@ -195,23 +209,10 @@ class FileService:
                         self._send_file(notified_socket, file_name)
 
                     # Client is sending a file
-                    elif current_operation == 'send':
+                    else:
                         self._receive_file(notified_socket, file_name)
 
 
-                    # Client is requesting a list of files stored on the server
-                    elif current_operation == 'list':
-                        files = self._enumerate_list()
-
-                        # Form the message to be sent to the client
-                        files_message = 'Files Stored:\n-------------\n'
-                        for file in files:
-                            files_message += file + '\n'
-
-                        self._send_message(notified_socket, files_message)
-                        self._remove_connection(client_addr, notified_socket)
-
-                        continue
 
 
 

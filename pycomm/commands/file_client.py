@@ -48,20 +48,30 @@ class FileClient:
             print(e)
             sys.exit()
 
-    def _send_file(self, size, file):
-        """Used for sending files to a server"""
-        # Create the file header
-        file_header = f"{size:<{self.HEADER_LENGTH}}".encode(self.ENCODING)
-
-        # Send the data
-        self.client_socket.send(file_header + file)
-
-    def file_query(self):
-        # First send the op flag so that the server will know what to do
+    def _send_op(self):
+        # Send the op flag so that the server will know what to do
         op_flag = self.file_op.encode(self.ENCODING)
         op_header = f"{len(op_flag): <{self.HEADER_LENGTH}}".encode(self.ENCODING)
 
         self.client_socket.send(op_header + op_flag)
+
+    def _send_file(self, file_path):
+        """Used for sending files to a server"""
+
+        print("[+] Sending file to server ... ")
+        # Open file for reading
+        with open(self.file_name, 'rb') as f_obj:
+            file_size = os.path.getsize(file_path)
+            data = f_obj.read(file_size)
+
+        # Create the file header
+        file_header = f"{file_size:<{self.HEADER_LENGTH}}".encode(self.ENCODING)
+
+        # Send the file data
+        self.client_socket.send(file_header + data)
+        print("[+] File sent")
+
+    def file_query(self):
 
         # Encode the title
         title = self.file_name.encode(self.ENCODING)
@@ -110,11 +120,20 @@ class FileClient:
             return None
 
     def connect(self):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((self.host, self.port))
-        self.client_socket.setblocking(True)
+        # Attempt to configure the client
+        try:
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client_socket.connect((self.host, self.port))
+            self.client_socket.setblocking(True)
+        except ConnectionRefusedError:
+            print("\n[!] Server unavailable. Are you sure it is running?\n")
+            sys.exit()
 
         try:
+
+            # First, only send the file op to the server
+            self._send_op()
+
             # Send the filename and operation flag
             self.file_query()
 
@@ -133,13 +152,8 @@ class FileClient:
 
                 file_path = os.path.join(self.storage_path, self.file_name)
 
-                # Open file for reading
-                with open(self.file_name, 'rb') as f_obj:
-                    file_size = os.path.getsize(file_path)
-                    data = f_obj.read(file_size)
-
                 # Send the file off to the server
-                self._send_file(file_size, data)
+                self._send_file(file_path)
 
             # Retrieve a list of files stored on the server
             elif self.file_op == 'list':
