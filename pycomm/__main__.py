@@ -7,6 +7,7 @@ import sys
 from pycomm.commands.chat import chat
 from pycomm.commands.create_service import create_service
 from pycomm.commands.transfer import transfer
+from pycomm.commands.reverse_shell import shell
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -21,4 +22,6 @@ def main():
 
 main.add_command(chat)
 main.add_command(create_service)
+main.add_command(shell)
 main.add_command(transfer)
+
