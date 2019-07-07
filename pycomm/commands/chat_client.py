@@ -42,10 +42,15 @@ class ChatClient:
     #         return
 
     def connect(self):
-        # Configure client socket
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((self.host, self.port))
-        self.client_socket.setblocking(False)
+        try:
+            # Configure client socket
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client_socket.connect((self.host, self.port))
+            self.client_socket.setblocking(False)
+        except ConnectionError:
+            print("\n[!] Server unavailable. Are you sure it is running?\n")
+            self.client_socket.close()
+            sys.exit()
 
         username = self.user.encode(self.ENCODING)
         # Form the username data and send it to the server
@@ -100,3 +105,7 @@ class ChatClient:
                 # Any other exception - something happened, exit
                 print('Reading error: '.format(str(e)))
                 sys.exit()
+
+    def disconnect(self):
+        self.client_socket.shutdown(socket.SHUT_RDWR)
+        self.client_socket.close()

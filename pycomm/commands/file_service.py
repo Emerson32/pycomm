@@ -128,6 +128,17 @@ class FileService:
         # Also remove from operations dictionary
         del self.ops[sock]
 
+    def _purge_connections(self):
+        """Purges all existing connections"""
+        for conn in self.sockets_list:
+            try:
+                conn.shutdown(socket.SHUT_RDWR)
+                conn.close()
+            except socket.error:
+                print("[-] A connection was already closed")
+
+        del self.sockets_list[:]
+
     def start(self):
         """Enable the service"""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -211,6 +222,14 @@ class FileService:
                     # Client is sending a file
                     else:
                         self._receive_file(notified_socket, file_name)
+
+    def stop(self):
+        # Close all client sockets
+        self._purge_connections()
+
+        # Close the server socket
+        self.server_socket.close()
+
 
 
 

@@ -10,4 +10,9 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.argument('port', type=int, required=True)
 def shell(host, port):
     client = ShellClient(host, port)
-    client.connect()
+
+    try:
+        client.connect()
+    except KeyboardInterrupt:
+        client.disconnect()
+

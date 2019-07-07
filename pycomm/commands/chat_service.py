@@ -57,6 +57,17 @@ class ChatService:
             # Client closed the connection in an unnatural manner
             return False
 
+    def _purge_connections(self):
+        """Purges all existing connections"""
+        for conn in self.sockets_list:
+            try:
+                conn.shutdown(socket.SHUT_RDWR)
+                conn.close()
+            except socket.error:
+                print("[-] A connection was already closed")
+
+        del self.sockets_list[:]
+
     def start(self):
         """Enables the service"""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -136,4 +147,12 @@ class ChatService:
 
                 # Remove the faulty client
                 del self.clients[notified_socket]
+
+    def stop(self):
+        """Gracefully stop the chat service"""
+        # Close all client sockets
+        self._purge_connections()
+
+        # Close the server socket
+        self.server_socket.close()
 

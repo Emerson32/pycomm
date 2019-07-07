@@ -25,8 +25,9 @@ def chat(host, port):
 
     try:
         client.connect()
-    except ConnectionRefusedError:
-        raise click.UsageError("Server not established")
+    except KeyboardInterrupt:
+        client.disconnect()
+
 
 
 

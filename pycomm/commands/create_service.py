@@ -27,12 +27,26 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 def create_service(chat, file, reverse, host, port, path):
     if chat:
         service = ChatService(host, port)
-        service.start()
+
+        try:
+            service.start()
+        except KeyboardInterrupt:
+            service.stop()
+
     elif file:
         service = FileService(host, port, path)
-        service.start()
+
+        try:
+            service.start()
+        except KeyboardInterrupt:
+            service.stop()
+
     elif reverse:
         service = ShellService(host, port)
-        service.start()
+
+        try:
+            service.start()
+        except KeyboardInterrupt:
+            service.stop()
     else:
         raise click.UsageError('Missing service option')

