@@ -98,7 +98,7 @@ class ShellService:
                 conn.setblocking(True)
                 self.sockets_list.append(conn)
                 self.address_list.append(addr)
-                print("\n[+] Accepted a new connection from {}:{}\n".format(*addr))
+                print("\n[+] Accepted a new connection from {}:{}".format(*addr), end='')
             except KeyboardInterrupt:
                 break
 
