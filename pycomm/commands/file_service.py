@@ -229,10 +229,3 @@ class FileService:
 
         # Close the server socket
         self.server_socket.close()
-
-
-
-
-
-
-
