@@ -25,6 +25,7 @@ class ShellService:
         self.server_socket = None
         self.sockets_list = []
         self.address_list = []
+        self.curr_conn_id = None
 
         # Commands recognized by server prompt
         self.server_commands = {
@@ -135,6 +136,7 @@ class ShellService:
 
                     # Update the appropriate lists
                     indx = self.sockets_list.index(conn)
+                    self.curr_conn_id = None
                     del self.sockets_list[indx]
                     del self.address_list[indx]
                     break
@@ -143,10 +145,17 @@ class ShellService:
                 # return to the main shell prompt
                 elif cmd == 'quit':
                     self._send_command(conn, cmd)
+                    self.curr_conn_id = None
                     break
 
                 elif cmd == 'help':
                     self.display_help(self.client_commands)
+                    print(str(self.curr_conn_id) + '> ', end='')
+                    continue
+
+                elif not cmd:
+                    print(str(self.curr_conn_id) + '> ', end='')
+                    continue
 
                 if cmd:
                     self._send_command(conn, cmd)
@@ -156,10 +165,12 @@ class ShellService:
                         print(client_response, end='')
                     else:
                         print("[-] Connection lost\n")
+                        self.curr_conn_id = None
                         break
 
             except Exception:
                 print("[-] Connection lost\n")
+                self.curr_conn_id = None
                 break
 
     def select_connection(self, message):
@@ -174,6 +185,7 @@ class ShellService:
             conn = self.sockets_list[conn_id]
             print(f"[+] Connected to {self.address_list[conn_id][0]}")
             print(str(self.address_list[conn_id][0]) + '> ', end='')
+            self.curr_conn_id = self.address_list[conn_id][0]
 
             return conn
 
@@ -292,4 +304,3 @@ class ShellService:
         self.server_socket.shutdown(socket.SHUT_RDWR)
         self.server_socket.close()
         print("[+] Done")
-
