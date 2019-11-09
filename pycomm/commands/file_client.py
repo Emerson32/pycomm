@@ -5,7 +5,6 @@ import sys
 
 
 class FileClient:
-    
     def __init__(self, host, port, file, path, file_op):
         self.host = host
         self.port = port
@@ -17,7 +16,7 @@ class FileClient:
 
         self.HEADER_LENGTH = 10
         self.ENCODING = 'utf-8'
-        
+
         self.client_socket = None
 
     def _receive_file(self):

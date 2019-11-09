@@ -25,7 +25,7 @@ class FileService:
             os.mkdir(self.storage_path)
 
     def _enumerate_list(self):
-        """Creates a list of all the storage files on the server"""
+        """Creates a list of all storage files on the server"""
         file_list = []
 
         for _, _, filenames in os.walk(self.storage_path, topdown=True):
