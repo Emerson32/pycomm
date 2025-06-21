@@ -7,5 +7,5 @@ Current tools in development:
 3. Simple Reverse Shell application
 
 Credit:
-* sentdex (Python Threading)
+* sentdex (Python Thread programming)
 * thenewbostoon (Python socket programming)
