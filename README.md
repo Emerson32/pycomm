@@ -5,7 +5,3 @@ Current tools in development:
 1. Simple TCP chat
 2. Simple TCP File Transmission
 3. Simple Reverse Shell application
-
-Credit:
-* sentdex
-* thenewboston
